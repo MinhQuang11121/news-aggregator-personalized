@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ article.title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Feed</a>
+    <h1>{{ article.title }}</h1>
+    <p><strong>Source:</strong> {{ article.source.name }}</p>
+    <p><strong>Published:</strong> {{ article.publishedAt[:10] }}</p>
+    <p>{{ article.content }}</p>
+    <p><a href="{{ article.url }}" target="_blank">Read full article</a></p>
+</body>
+</html>

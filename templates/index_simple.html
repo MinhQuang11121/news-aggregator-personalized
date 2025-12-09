@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple News Aggregator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .article { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        .article h3 { margin: 0; }
+        .article p { margin: 5px 0; }
+        a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>Personalized News Feed</h1>
+    <p>User ID: {{ user_id }}</p>
+    {% for article in articles %}
+    <div class="article">
+        <h3><a href="/view/{{ loop.index0 }}">{{ article.title }}</a></h3>
+        <p>{{ article.description }}</p>
+        <small>{{ article.source.name }} - {{ article.publishedAt[:10] }}</small>
+    </div>
+    {% endfor %}
+</body>
+</html>
