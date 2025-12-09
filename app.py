@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, session
 import os
 from dotenv import load_dotenv
-from data_fetcher import NewsFetcher
-from models import TopicModeler, CTRPredictor
-from recommender import Recommender
-from user_history import UserHistory
+# ML imports disabled for deployment
+# from data_fetcher import NewsFetcher
+# from models import TopicModeler, CTRPredictor
+# from recommender import Recommender
+# from user_history import UserHistory
 
 load_dotenv()
 
@@ -41,13 +42,14 @@ def get_mock_articles():
 
 # Initialize ML components with error handling
 try:
-    news_fetcher = NewsFetcher()
-    topic_modeler = TopicModeler()
-    ctr_predictor = CTRPredictor()
-    user_history = UserHistory()
-    recommender = Recommender(topic_modeler, ctr_predictor, user_history)
-    ml_enabled = True
-    print("ML components initialized successfully")
+    # Temporarily disable ML for deployment
+    news_fetcher = None
+    topic_modeler = None
+    ctr_predictor = None
+    user_history = None
+    recommender = None
+    ml_enabled = False
+    print("ML components disabled for deployment")
 except Exception as e:
     print(f"ML initialization failed: {e}, running without ML")
     ml_enabled = False
