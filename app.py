@@ -11,28 +11,79 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key')
 
-# Initialize ML components
-news_fetcher = NewsFetcher()
-topic_modeler = TopicModeler()
-ctr_predictor = CTRPredictor()
-user_history = UserHistory()
-recommender = Recommender(topic_modeler, ctr_predictor, user_history)
+def get_mock_articles():
+    return [
+        {
+            "title": "AI Advances in Healthcare",
+            "description": "New AI models are revolutionizing medical diagnostics.",
+            "content": "Artificial intelligence is making significant strides in healthcare...",
+            "url": "https://example.com/ai-healthcare",
+            "publishedAt": "2025-12-09T10:00:00Z",
+            "source": {"name": "Tech News"}
+        },
+        {
+            "title": "Climate Change Summit Results",
+            "description": "World leaders agree on new climate targets.",
+            "content": "The recent summit concluded with ambitious goals...",
+            "url": "https://example.com/climate-summit",
+            "publishedAt": "2025-12-08T15:30:00Z",
+            "source": {"name": "Environment Daily"}
+        },
+        {
+            "title": "Stock Market Trends",
+            "description": "Analysis of current market conditions.",
+            "content": "The stock market has shown volatility recently...",
+            "url": "https://example.com/stock-market",
+            "publishedAt": "2025-12-07T09:15:00Z",
+            "source": {"name": "Finance Today"}
+        }
+    ]
+
+# Initialize ML components with error handling
+try:
+    news_fetcher = NewsFetcher()
+    topic_modeler = TopicModeler()
+    ctr_predictor = CTRPredictor()
+    user_history = UserHistory()
+    recommender = Recommender(topic_modeler, ctr_predictor, user_history)
+    ml_enabled = True
+    print("ML components initialized successfully")
+except Exception as e:
+    print(f"ML initialization failed: {e}, running without ML")
+    ml_enabled = False
+    news_fetcher = None
+    recommender = None
 
 # Load or train models
 try:
     topic_modeler.load_model()
-    ctr_predictor.load_model()
-except:
+    print("Topic model loaded successfully")
+except Exception as e:
+    print(f"Topic model loading failed: {e}")
     # Train on demo data if models don't exist
     demo_articles = [
         {"title": "AI in Healthcare", "content": "AI technology healthcare medical diagnosis"},
         {"title": "Climate Change", "content": "climate environment global warming carbon"},
         {"title": "Stock Market", "content": "finance stocks trading investment market"}
     ]
-    topic_modeler.train(demo_articles)
-    ctr_predictor.train(demo_articles)
-    topic_modeler.save_model()
-    ctr_predictor.save_model()
+    try:
+        topic_modeler.train(demo_articles)
+        topic_modeler.save_model()
+        print("Topic model trained and saved")
+    except Exception as e:
+        print(f"Topic model training failed: {e}")
+
+try:
+    ctr_predictor.load_model()
+    print("CTR model loaded successfully")
+except Exception as e:
+    print(f"CTR model loading failed: {e}")
+    try:
+        ctr_predictor.train(demo_articles)
+        ctr_predictor.save_model()
+        print("CTR model trained and saved")
+    except Exception as e:
+        print(f"CTR model training failed: {e}")
 
 @app.route('/')
 def home():
@@ -42,91 +93,80 @@ def home():
     user_id = session['user_id']
 
     # Get news articles
-    try:
-        articles = news_fetcher.get_news()
-    except:
-        # Fallback to mock data if API fails
-        articles = [
-            {
-                "title": "AI Advances in Healthcare",
-                "description": "New AI models are revolutionizing medical diagnostics.",
-                "content": "Artificial intelligence is making significant strides in healthcare...",
-                "url": "https://example.com/ai-healthcare",
-                "publishedAt": "2025-12-09T10:00:00Z",
-                "source": {"name": "Tech News"}
-            },
-            {
-                "title": "Climate Change Summit Results",
-                "description": "World leaders agree on new climate targets.",
-                "content": "The recent summit concluded with ambitious goals...",
-                "url": "https://example.com/climate-summit",
-                "publishedAt": "2025-12-08T15:30:00Z",
-                "source": {"name": "Environment Daily"}
-            },
-            {
-                "title": "Stock Market Trends",
-                "description": "Analysis of current market conditions.",
-                "content": "The stock market has shown volatility recently...",
-                "url": "https://example.com/stock-market",
-                "publishedAt": "2025-12-07T09:15:00Z",
-                "source": {"name": "Finance Today"}
-            }
-        ]
+    if ml_enabled and news_fetcher:
+        try:
+            articles = news_fetcher.get_news()
+            print(f"Fetched {len(articles)} articles from API")
+        except Exception as e:
+            print(f"News API failed: {e}, using mock data")
+            articles = get_mock_articles()
+    else:
+        print("Using mock data (ML disabled)")
+        articles = get_mock_articles()
 
     # Get personalized recommendations
-    try:
-        recommended_articles = recommender.recommend(user_id, articles, user_history)
-        articles = recommended_articles[:10]  # Show top 10
-    except:
-        # If recommendation fails, show all articles
-        pass
+    if ml_enabled and recommender:
+        try:
+            recommended_articles = recommender.recommend(user_id, articles, user_history)
+            articles = recommended_articles[:10]  # Show top 10
+            print(f"Generated {len(articles)} personalized recommendations")
+        except Exception as e:
+            print(f"Recommendation failed: {e}, showing all articles")
+            # If recommendation fails, show all articles
+            pass
+    else:
+        print("Skipping recommendations (ML disabled)")
+        articles = articles[:10]  # Show first 10
 
-    return render_template('index.html', articles=articles, user_id=user_id)
+    return render_template('index.html', articles=articles, user_id=user_id, ml_enabled=ml_enabled)
 
 @app.route('/view/<int:article_id>')
 def view(article_id):
     user_id = session.get('user_id', 'anonymous')
 
     # Get articles (same logic as home)
-    try:
-        articles = news_fetcher.get_news()
-    except:
-        articles = [
-            {
-                "title": "AI Advances in Healthcare",
-                "description": "New AI models are revolutionizing medical diagnostics.",
-                "content": "Artificial intelligence is making significant strides in healthcare...",
-                "url": "https://example.com/ai-healthcare",
-                "publishedAt": "2025-12-09T10:00:00Z",
-                "source": {"name": "Tech News"}
-            },
-            {
-                "title": "Climate Change Summit Results",
-                "description": "World leaders agree on new climate targets.",
-                "content": "The recent summit concluded with ambitious goals...",
-                "url": "https://example.com/climate-summit",
-                "publishedAt": "2025-12-08T15:30:00Z",
-                "source": {"name": "Environment Daily"}
-            },
-            {
-                "title": "Stock Market Trends",
-                "description": "Analysis of current market conditions.",
-                "content": "The stock market has shown volatility recently...",
-                "url": "https://example.com/stock-market",
-                "publishedAt": "2025-12-07T09:15:00Z",
-                "source": {"name": "Finance Today"}
-            }
-        ]
+    if ml_enabled and news_fetcher:
+        try:
+            articles = news_fetcher.get_news()
+        except:
+            articles = get_mock_articles()
+    else:
+        articles = get_mock_articles()
 
     if 0 <= article_id < len(articles):
         article = articles[article_id]
 
-        # Track user interaction
-        user_history.add_interaction(user_id, article_id, 'view')
+        # Track user interaction (only if ML enabled)
+        if ml_enabled and user_history:
+            try:
+                user_history.add_interaction(user_id, article_id, 'view')
+            except:
+                pass
 
         return render_template('article.html', article=article)
     else:
         return "Article not found", 404
+
+@app.route('/click/<int:article_id>')
+def click(article_id):
+    user_id = session.get('user_id', 'anonymous')
+
+    # Track click interaction (only if ML enabled)
+    if ml_enabled and user_history:
+        try:
+            user_history.add_interaction(user_id, article_id, 'click')
+        except:
+            pass
+
+        # Update CTR predictor with new data
+        if ctr_predictor:
+            try:
+                ctr_predictor.update_model(user_history.get_training_data())
+                ctr_predictor.save_model()
+            except:
+                pass
+
+    return f'<h1>Article {article_id} clicked!</h1><a href="/">Back to Feed</a>'
 
 @app.route('/profile')
 def profile():
