@@ -39,12 +39,12 @@ MOCK_NEWS = [
 def home():
     if 'user_id' not in session:
         session['user_id'] = 'user_' + str(hash(request.remote_addr or 'default') % 1000)
-    return render_template('index_simple.html', articles=MOCK_NEWS, user_id=session['user_id'])
+    return render_template('index.html', articles=MOCK_NEWS, user_id=session['user_id'])
 
 @app.route('/view/<int:article_id>')
 def view(article_id):
     article = MOCK_NEWS[article_id % len(MOCK_NEWS)]
-    return render_template('article_simple.html', article=article)
+    return render_template('article.html', article=article)
 
 @app.route('/click/<int:article_id>')
 def click(article_id):
