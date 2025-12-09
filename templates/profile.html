@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile - News Aggregator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        .history-item { border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .clicked { border-left: 4px solid #28a745; }
+        .viewed { border-left: 4px solid #007bff; }
+        .back-link { display: inline-block; margin-bottom: 20px; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to News Feed</a>
+
+        <h1>User Profile</h1>
+        <p><strong>User ID:</strong> {{ user_id }}</p>
+
+        <h2>Your Statistics</h2>
+        <div class="stats">
+            <div class="stat">
+                <h3>{{ stats.total_views }}</h3>
+                <p>Articles Viewed</p>
+            </div>
+            <div class="stat">
+                <h3>{{ stats.total_clicks }}</h3>
+                <p>Articles Clicked</p>
+            </div>
+            <div class="stat">
+                <h3>{{ stats.unique_articles }}</h3>
+                <p>Unique Articles</p>
+            </div>
+        </div>
+
+        <h2>Recent Activity (Last 10)</h2>
+        {% if history %}
+            {% for item in history %}
+            <div class="history-item {{ 'clicked' if item.clicked else 'viewed' }}">
+                <strong>Article #{{ item.article_id }}</strong>
+                <br>
+                <small>{{ item.timestamp[:19].replace('T', ' ') }}</small>
+                <span class="badge {{ 'badge-success' if item.clicked else 'badge-primary' }}">
+                    {{ 'Clicked' if item.clicked else 'Viewed' }}
+                </span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No activity yet. Start browsing news to build your profile!</p>
+        {% endif %}
+    </div>
+</body>
+</html>

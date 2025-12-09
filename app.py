@@ -128,21 +128,16 @@ def view(article_id):
     else:
         return "Article not found", 404
 
-@app.route('/click/<int:article_id>')
-def click(article_id):
+@app.route('/profile')
+def profile():
     user_id = session.get('user_id', 'anonymous')
-
-    # Track click interaction
-    user_history.add_interaction(user_id, article_id, 'click')
-
-    # Update CTR predictor with new data
-    try:
-        ctr_predictor.update_model(user_history.get_training_data())
-        ctr_predictor.save_model()
-    except:
-        pass
-
-    return f'<h1>Article {article_id} clicked!</h1><a href="/">Back to Feed</a>'
+    history = user_history.get_history(user_id)
+    stats = {
+        'total_views': len([h for h in history if not h['clicked']]),
+        'total_clicks': len([h for h in history if h['clicked']]),
+        'unique_articles': len(set(h['article_id'] for h in history))
+    }
+    return render_template('profile.html', history=history[-10:], stats=stats, user_id=user_id)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
